@@ -3,6 +3,7 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
 from .models import Book
+from django.core.paginator import Paginator
 from django.db.models import Q
 
 
@@ -11,13 +12,28 @@ class BookListView(ListView):
     template_name = 'books/book_list.html'
     context_object_name = 'books'
     paginate_by = 20  # 20 books per page
-
+    # for search box ( you can use it anywhere)
     def get_queryset(self):
         qs = super().get_queryset().order_by('title')  # explicit ordering
         q = self.request.GET.get('q')
         if q:
             qs = qs.filter(Q(title__icontains=q) | Q(author__icontains=q))
         return qs
+    # for pagination you can use it anywhere
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        products = self.get_queryset()
+        page_number = self.request.GET.get('page', 1)  # Get current page, default to 1
+        paginator = Paginator(products, self.paginate_by)
+        current_page = paginator.get_page(page_number)
+
+        context['current_page'] = current_page.number
+        context['total_pages'] = paginator.num_pages
+
+        return context
+
+
 class BookDetailView(DetailView):
     model = Book
     template_name = 'books/book_detail.html'
