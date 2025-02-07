@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="container">
+  <h1>Dashboard</h1>
+  <hr>
+  <br>
+
+  {% if request.user.is_superuser %}
+    <!-- Pending Borrow Requests Section -->
+    <h2>Borrow Requests (Pending)</h2>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Book</th>
+          <th>Requested On</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in requests_page.object_list %}
+          <tr>
+            <td>{{ req.user.username }}</td>
+            <td>{{ req.book.title }}</td>
+            <td>
+              {% if req.requested_on %}
+                {{ req.requested_on|date:"Y-m-d H:i" }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>
+              <form method="post" action="{% url 'borrow:approve_request' req.pk %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success btn-sm">Approve</button>
+              </form>
+              <form method="post" action="{% url 'borrow:reject_request' req.pk %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+              </form>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4">No pending requests.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <!-- Pagination for pending requests -->
+    <nav aria-label="Borrow Request Pagination">
+      <ul class="pagination justify-content-center">
+        {% if requests_page.has_previous %}
+          <li class="page-item"><a class="page-link" href="?page_requests={{ requests_page.previous_page_number }}">Previous</a></li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Previous</span></li>
+        {% endif %}
+        {% for num in requests_page.paginator.page_range %}
+          {% if requests_page.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+          {% else %}
+            <li class="page-item"><a class="page-link" href="?page_requests={{ num }}">{{ num }}</a></li>
+          {% endif %}
+        {% endfor %}
+        {% if requests_page.has_next %}
+          <li class="page-item"><a class="page-link" href="?page_requests={{ requests_page.next_page_number }}">Next</a></li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Next</span></li>
+        {% endif %}
+      </ul>
+    </nav>
+
+    <!-- Active Borrow Records Section -->
+    <h2>Active Borrow Records</h2>
+    <form method="get" class="form-inline mb-3">
+      <input type="text" name="active_search" class="form-control mr-2" placeholder="Search active by username or book" value="{{ active_search_query }}">
+      <button type="submit" class="btn btn-primary">Search Active</button>
+    </form>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Book</th>
+          <th>Requested On</th>
+          <th>Return Date</th>
+          <th>Countdown</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in active_borrows_page.object_list %}
+          <tr>
+            <td>{{ req.user.username }}</td>
+            <td>{{ req.book.title }}</td>
+            <td>
+              {% if req.requested_on %}
+                {{ req.requested_on|date:"Y-m-d H:i" }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>{{ req.return_date|date:"Y-m-d" }}</td>
+            <td>
+              <span class="countdown" data-return-date="{{ req.return_date|date:'Y-m-d' }}"></span>
+            </td>
+            <td>
+              {% if req.pk %}
+                <form method="post" action="{% url 'borrow:mark_returned' req.pk %}" style="display:inline;">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-success">Mark as Returned</button>
+                </form>
+              {% else %}
+                N/A
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6">No active borrow records found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <!-- Pagination for active borrows -->
+    <nav aria-label="Active Borrow Pagination">
+      <ul class="pagination justify-content-center">
+        {% if active_borrows_page.has_previous %}
+          <li class="page-item"><a class="page-link" href="?active_search={{ active_search_query }}&page_active={{ active_borrows_page.previous_page_number }}">Previous</a></li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Previous</span></li>
+        {% endif %}
+        {% for num in active_borrows_page.paginator.page_range %}
+          {% if active_borrows_page.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+          {% else %}
+            <li class="page-item"><a class="page-link" href="?active_search={{ active_search_query }}&page_active={{ num }}">{{ num }}</a></li>
+          {% endif %}
+        {% endfor %}
+        {% if active_borrows_page.has_next %}
+          <li class="page-item"><a class="page-link" href="?active_search={{ active_search_query }}&page_active={{ active_borrows_page.next_page_number }}">Next</a></li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Next</span></li>
+        {% endif %}
+      </ul>
+    </nav>
+
+    <!-- Returned Borrow Records Section -->
+    <h2>Returned Borrow Records</h2>
+    <form method="get" class="form-inline mb-3">
+      <input type="text" name="returned_search" class="form-control mr-2" placeholder="Search returned by username or book" value="{{ returned_search_query }}">
+      <button type="submit" class="btn btn-primary">Search Returned</button>
+    </form>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Book</th>
+          <th>Requested On</th>
+          <th>Return Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in returned_borrows_page.object_list %}
+          <tr>
+            <td>{{ req.user.username }}</td>
+            <td>{{ req.book.title }}</td>
+            <td>
+              {% if req.requested_on %}
+                {{ req.requested_on|date:"Y-m-d H:i" }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>{{ req.return_date|date:"Y-m-d" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4">No returned records found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <!-- Pagination for returned borrows -->
+    <nav aria-label="Returned Borrow Pagination">
+      <ul class="pagination justify-content-center">
+        {% if returned_borrows_page.has_previous %}
+          <li class="page-item"><a class="page-link" href="?returned_search={{ returned_search_query }}&page_returned={{ returned_borrows_page.previous_page_number }}">Previous</a></li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Previous</span></li>
+        {% endif %}
+        {% for num in returned_borrows_page.paginator.page_range %}
+          {% if returned_borrows_page.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+          {% else %}
+            <li class="page-item"><a class="page-link" href="?returned_search={{ returned_search_query }}&page_returned={{ num }}">{{ num }}</a></li>
+          {% endif %}
+        {% endfor %}
+        {% if returned_borrows_page.has_next %}
+          <li class="page-item"><a class="page-link" href="?returned_search={{ returned_search_query }}&page_returned={{ returned_borrows_page.next_page_number }}">Next</a></li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Next</span></li>
+        {% endif %}
+      </ul>
+    </nav>
+
+    <!-- Books Overview Section (optional) -->
+    <h2>Books Overview</h2>
+    <div class="row">
+      {% for book in books_page.object_list %}
+        <div class="col-md-4 mb-3">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">{{ book.title }}</h5>
+              <p class="card-text"><strong>Author:</strong> {{ book.author }}</p>
+              <p class="card-text"><strong>Copies:</strong> {{ book.available_copies }} / {{ book.total_copies }}</p>
+            </div>
+          </div>
+        </div>
+      {% empty %}
+        <p>No books available.</p>
+      {% endfor %}
+    </div>
+    <!-- Pagination for books overview -->
+    <nav aria-label="Books Pagination">
+      <ul class="pagination justify-content-center">
+        {% if books_page.has_previous %}
+          <li class="page-item"><a class="page-link" href="?page_books={{ books_page.previous_page_number }}">Previous</a></li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Previous</span></li>
+        {% endif %}
+        {% for num in books_page.paginator.page_range %}
+          {% if books_page.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+          {% else %}
+            <li class="page-item"><a class="page-link" href="?page_books={{ num }}">{{ num }}</a></li>
+          {% endif %}
+        {% endfor %}
+        {% if books_page.has_next %}
+          <li class="page-item"><a class="page-link" href="?page_books={{ books_page.next_page_number }}">Next</a></li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Next</span></li>
+        {% endif %}
+      </ul>
+    </nav>
+
+  {% else %}
+    <!-- Regular user view -->
+    <h2>My Borrowed Books</h2>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Book</th>
+          <th>Requested On</th>
+          <th>Return Date</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for borrow in borrow_page.object_list %}
+          <tr>
+            <td>{{ borrow.book.title }}</td>
+            <td>
+              {% if borrow.requested_on %}
+                {{ borrow.requested_on|date:"Y-m-d H:i" }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>{{ borrow.return_date|date:"Y-m-d" }}</td>
+            <td>{% if borrow.returned %}Returned{% else %}Not Returned{% endif %}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4">You have not borrowed any books yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <nav aria-label="User Borrow Pagination">
+      <ul class="pagination justify-content-center">
+        {% if borrow_page.has_previous %}
+          <li class="page-item"><a class="page-link" href="?page={{ borrow_page.previous_page_number }}">Previous</a></li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Previous</span></li>
+        {% endif %}
+        {% for num in borrow_page.paginator.page_range %}
+          {% if borrow_page.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+          {% else %}
+            <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+          {% endif %}
+        {% endfor %}
+        {% if borrow_page.has_next %}
+          <li class="page-item"><a class="page-link" href="?page={{ borrow_page.next_page_number }}">Next</a></li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Next</span></li>
+        {% endif %}
+      </ul>
+    </nav>
+    <h2>My Profile</h2>
+    <p><strong>Username:</strong> {{ profile.username }}</p>
+    <p><strong>Email:</strong> {{ profile.email }}</p>
+  {% endif %}
+</div>
+
+{% block extra_js %}
+<script>
+  // Update countdown for each active borrow record.
+  function updateCountdowns() {
+    const countdownElements = document.querySelectorAll('.countdown');
+    countdownElements.forEach(function(el) {
+      const returnDateStr = el.getAttribute('data-return-date'); // Format: YYYY-MM-DD
+      const returnDate = new Date(returnDateStr + "T23:59:59");
+      const now = new Date();
+      const diff = returnDate - now;
+      if(diff > 0) {
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((diff / (1000 * 60)) % 60);
+        el.textContent = days + "d " + hours + "h " + minutes + "m";
+      } else {
+        el.textContent = "Due";
+      }
+    });
+  }
+  updateCountdowns();
+  setInterval(updateCountdowns, 60000);
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <h1>Cancel Borrow</h1>
+  <p>Are you sure you want to cancel borrowing "{{ object.book.title }}"?</p>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Yes, Cancel Borrow</button>
+    <a href="{% url 'borrow:borrow_list' %}" class="btn btn-secondary">No, Go Back</a>
+  </form>
+</div>
+{% endblock %}

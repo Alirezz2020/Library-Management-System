@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="container">
+  <h1>{{ object.title }}</h1>
+  <p><strong>Author:</strong> {{ object.author }}</p>
+  <p><strong>ISBN:</strong> {{ object.isbn }}</p>
+  <p><strong>Total Copies:</strong> {{ object.total_copies }}</p>
+  <p><strong>Available Copies:</strong> {{ object.available_copies }}</p>
+  {% if request.user.is_superuser %}
+    <a href="{% url 'books:book_update' object.pk %}" class="btn btn-info">Edit</a>
+    <a href="{% url 'books:book_delete' object.pk %}" class="btn btn-danger">Delete</a>
+  {% endif %}
+  <a href="{% url 'books:book_list' %}" class="btn btn-secondary">Back to List</a>
+</div>
+{% endblock %}

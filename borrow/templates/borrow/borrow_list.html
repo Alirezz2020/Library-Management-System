@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <h1>My Borrowed Books</h1>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Book</th>
+        <th>Requested On</th>
+        <th>Status</th>
+        <th>Returned?</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for borrow in borrows %}
+        <tr>
+          <td>{{ borrow.book.title }}</td>
+          <td>
+            {% if borrow.requested_on %}
+              {{ borrow.requested_on|date:"Y-m-d" }}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+          <td>{{ borrow.get_status_display }}</td>
+          <td>
+            {% if borrow.status == 'approved' %}
+              {% if borrow.returned %}
+                Yes
+              {% else %}
+                No
+              {% endif %}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4">No borrow records found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+
+
+{% block extra_js %}
+<script>
+  // Update countdown for each active borrow.
+  function updateCountdowns() {
+    const countdownElements = document.querySelectorAll('.countdown');
+    countdownElements.forEach(function(el) {
+      const returnDateStr = el.getAttribute('data-return-date'); // Format: YYYY-MM-DD
+      // Create a Date object for the return date (set to end of day)
+      const returnDate = new Date(returnDateStr + "T23:59:59");
+      const now = new Date();
+      const diff = returnDate - now;
+      if(diff > 0) {
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((diff / (1000 * 60)) % 60);
+        el.textContent = days + "d " + hours + "h " + minutes + "m";
+      } else {
+        el.textContent = "Due";
+      }
+    });
+  }
+  updateCountdowns();
+  setInterval(updateCountdowns, 60000); // Update every minute
+</script>
+{% endblock %}
+{% endblock %}

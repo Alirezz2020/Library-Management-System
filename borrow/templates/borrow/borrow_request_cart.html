@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <h1>My Borrow Cart</h1>
+  {% if requests %}
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Book</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in requests %}
+          <tr>
+            <td>{{ req.book.title }}</td>
+            <td>
+              <a href="{% url 'borrow:request_cancel' req.pk %}" class="btn btn-warning btn-sm">Remove</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <form method="post" action="{% url 'borrow:request_submit' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-success">Send Borrow Request</button>
+    </form>
+  {% else %}
+    <p>Your borrow cart is empty.</p>
+  {% endif %}
+  <a href="{% url 'books:book_list' %}" class="btn btn-primary">Continue Browsing Books</a>
+</div>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <h1>Remove Book from Borrow Cart</h1>
+  <p>Are you sure you want to remove "{{ object.book.title }}" from your borrow cart?</p>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Yes, Remove</button>
+    <a href="{% url 'borrow:request_cart' %}" class="btn btn-secondary">Cancel</a>
+  </form>
+</div>
+{% endblock %}

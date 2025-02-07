@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <h1>My Borrow Requests</h1>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Book</th>
+        <th>Requested On</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for req in requests %}
+        <tr>
+          <td>{{ req.book.title }}</td>
+          <td>{{ req.requested_on|date:"Y-m-d H:i" }}</td>
+          <td>{{ req.get_status_display }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="3">You have no borrow requests.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <a href="{% url 'borrow:borrow_request' %}" class="btn btn-primary">Request Another Book</a>
+</div>
+{% endblock %}
